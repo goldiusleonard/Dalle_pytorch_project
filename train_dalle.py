@@ -59,9 +59,11 @@ vae = DiscreteVAE(
     codebook_dim = 512,       # codebook dimension
     hidden_dim = 64,          # hidden dimension
     num_resnet_blocks = 1,    # number of resnet blocks
-    temperature = 0.9,        # gumbel softmax temperature, the lower this is, the harder the discretization
-    straight_through = False, # straight-through for gumbel softmax. unclear if it is better one way or the other
+    temperature = 0.9         # gumbel softmax temperature, the lower this is, the harder the discretization
 ).to(device)
+
+if os.path.exists(vae_save_path):
+    vae.load_state_dict(torch.load(vae_save_path))
 
 train_size = len(train_data)
 idx_list = range(0, train_size, batch_size)
@@ -130,6 +132,9 @@ dalle = DALLE(
     attn_dropout = 0.1,                         # attention dropout
     ff_dropout = 0.1                            # feedforward dropout
 ).to(device)
+
+if os.path.exists(dalle_save_path):
+    dalle.load_state_dict(torch.load(dalle_save_path))
 
 train_size = len(train_data)
 idx_list = range(0, train_size, batch_size)
