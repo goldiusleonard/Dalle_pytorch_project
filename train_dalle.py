@@ -12,7 +12,7 @@ from torchvision.datasets.coco import CocoCaptions
 input_image_size = 256
 
 # Change your batch size here
-batch_size = 4
+batch_size = 2
 
 # Change your epoch here
 epoch = 5
@@ -113,12 +113,11 @@ for curr_epoch in range(epoch):
         avg_loss.backward()
         opt.step()
 
-        if batch_idx != 0 and batch_idx % 100 == 0:
-            torch.save(vae.state_dict(), vae_save_path)
-            sched.step(avg_loss)
-        
         if batch_idx % 100 == 0:
+            torch.save(vae.state_dict(), vae_save_path)
             print(f"loss: {avg_loss.data}")
+        
+    sched.step(avg_loss)
 
 torch.save(vae.state_dict(), vae_save_path)
 
@@ -189,11 +188,10 @@ for curr_epoch in range(epoch):
         avg_loss.backward()
         opt.step()
 
-        if batch_idx != 0 and batch_idx % 100 == 0:
-            torch.save(dalle.state_dict(), dalle_save_path)
-            sched.step(avg_loss)
-        
         if batch_idx % 100 == 0:
+            torch.save(dalle.state_dict(), dalle_save_path)
             print(f"average loss: {avg_loss.data}")
+        
+    sched.step(avg_loss)
 
 torch.save(dalle.state_dict(), dalle_save_path)
