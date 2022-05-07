@@ -10,11 +10,11 @@ import pandas as pd
 # Change your input size here
 input_image_size = 256
 
-# Change your train image root path here
-test_img_path = "./val2014/"
+# Change your test image root path here
+test_img_path = "./Flower_Dataset_Combine/ImagesCombine/"
 
-# Change your train annot csv path here
-test_annot_path = "./annotations/captions_val2014.csv"
+# Change your test annot csv path here
+test_annot_path = "./Flower_Dataset_Combine/New_captions.csv"
 
 # Change your device ("cpu" or "cuda")
 device = "cuda"
@@ -67,7 +67,7 @@ dalle = DALLE(
 dalle.load_state_dict(torch.load(dalle_load_path))
 
 for data in tqdm(test_csv.iterrows()):
-    target = list(data[1]['caption'])
+    target = [data[1]['caption']]
 
     text = tokenizer.tokenize(target).to(device)
 

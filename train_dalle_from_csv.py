@@ -19,10 +19,10 @@ batch_size = 1
 epoch = 5
 
 # Change your train image root path here
-train_img_path = "./train2014/"
+train_img_path = "./Flower_Dataset_Combine/ImagesCombine/"
 
 # Change your train annot csv path here
-train_annot_path = "./annotations/captions_train2014.csv"
+train_annot_path = "./Flower_Dataset_Combine/New_captions.csv"
 
 # Change your device ("cpu" or "cuda")
 device = "cuda"
@@ -32,12 +32,6 @@ vae_save_path = "./vae.pth"
 
 # Change your dalle model save path here (ends with ".pth")
 dalle_save_path = "./dalle.pth"
-
-# Change the test result image save path (should be a directory or folder)
-test_img_save_path = "./result"
-
-if not os.path.exists(test_img_save_path):
-    os.makedirs(test_img_save_path)
 
 transform = T.Compose([
     T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
@@ -180,7 +174,7 @@ for curr_epoch in range(epoch):
             image = transform(image)
             image = image.unsqueeze(0).to(device)
 
-            target = list(train_csv.loc[curr_idx]['caption'])
+            target = [train_csv.loc[curr_idx]['caption']]
             texts = tokenizer.tokenize(target).to(device)
 
             for text in texts:

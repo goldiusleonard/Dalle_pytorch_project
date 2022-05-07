@@ -32,12 +32,6 @@ vae_save_path = "./vae.pth"
 # Change your dalle model save path here (ends with ".pth")
 dalle_save_path = "./dalle.pth"
 
-# Change the test result image save path (should be a directory or folder)
-test_img_save_path = "./result"
-
-if not os.path.exists(test_img_save_path):
-    os.makedirs(test_img_save_path)
-
 transform = T.Compose([
     T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
     T.Resize(input_image_size),
