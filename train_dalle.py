@@ -12,7 +12,7 @@ from torchvision.datasets.coco import CocoCaptions
 input_image_size = 256
 
 # Change your batch size here
-batch_size = 2
+batch_size = 1
 
 # Change your epoch here
 epoch = 5
