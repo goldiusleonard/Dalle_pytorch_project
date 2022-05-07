@@ -2,11 +2,12 @@ import torch
 from torchvision import transforms as T
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from PIL import Image
 import os
 from tqdm import tqdm
 from dalle_pytorch import DiscreteVAE, DALLE
 from dalle_pytorch.tokenizer import SimpleTokenizer
-from torchvision.datasets.coco import CocoCaptions
+import pandas as pd
 
 # Change your input size here
 input_image_size = 256
@@ -20,8 +21,8 @@ epoch = 5
 # Change your train image root path here
 train_img_path = "./train2014/"
 
-# Change your train annot json path here
-train_annot_path = "./annotations/captions_train2014.json"
+# Change your train annot csv path here
+train_annot_path = "./annotations/captions_train2014.csv"
 
 # Change your device ("cpu" or "cuda")
 device = "cuda"
@@ -45,11 +46,10 @@ transform = T.Compose([
     T.ToTensor()
 ])
 
-train_data = CocoCaptions(
-    root=train_img_path,
-    annFile=train_annot_path,
-    transform=transform
-)
+train_csv= pd.read_csv(train_annot_path)
+
+train_csv = train_csv.drop_duplicates()
+train_csv = train_csv.dropna()
 
 vae = DiscreteVAE(
     image_size = 256,
@@ -64,7 +64,7 @@ vae = DiscreteVAE(
 if os.path.exists(vae_save_path):
     vae.load_state_dict(torch.load(vae_save_path))
 
-train_size = len(train_data)
+train_size = len(train_csv)
 idx_list = range(0, train_size, batch_size)
 
 tokenizer = SimpleTokenizer()
@@ -98,8 +98,11 @@ for curr_epoch in range(epoch):
         total_loss = torch.tensor(0., device=device)
 
         for curr_idx in iter_idx:
-            image, _ = train_data[curr_idx]
-            image = image.unsqueeze(0).type(torch.FloatTensor).to(device)
+            image_name = train_csv.loc[curr_idx]['file_name']
+            image_path = os.path.join(train_img_path, image_name)
+            image = Image.open(image_path)
+            image = transform(image)
+            image = image.unsqueeze(0).to(device)
 
             if total_loss == torch.tensor(0., device=device):
                 total_loss = vae(image, return_loss=True)
@@ -139,7 +142,7 @@ dalle = DALLE(
 if os.path.exists(dalle_save_path):
     dalle.load_state_dict(torch.load(dalle_save_path))
 
-train_size = len(train_data)
+train_size = len(train_csv)
 idx_list = range(0, train_size, batch_size)
 
 opt = Adam(
@@ -172,9 +175,14 @@ for curr_epoch in range(epoch):
         total_loss = torch.tensor(0., device=device)
 
         for curr_idx in iter_idx:
-            image, target = train_data[curr_idx]
-            image = image.unsqueeze(0).type(torch.FloatTensor).to(device)
-            texts = tokenizer.tokenize(target).type(torch.LongTensor).to(device)
+            image_name = train_csv.loc[curr_idx]['file_name']
+            image_path = os.path.join(train_img_path, image_name)
+            image = Image.open(image_path)
+            image = transform(image)
+            image = image.unsqueeze(0).to(device)
+
+            target = list(train_csv.loc[curr_idx]['caption'])
+            texts = tokenizer.tokenize(target).to(device)
 
             for text in texts:
                 if total_loss == torch.tensor(0., device=device):
