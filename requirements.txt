@@ -1,5 +1,5 @@
 cython==0.29.28
-dalle-pytorch==1.5.2
+dalle-pytorch==1.6.1
 pycocotools==2.0.4
 pandas==1.4.2
 git+https://github.com/openai/CLIP.git

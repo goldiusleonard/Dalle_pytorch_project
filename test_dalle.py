@@ -10,10 +10,10 @@ from torchvision.datasets.coco import CocoCaptions
 # Change your input size here
 input_image_size = 256
 
-# Change your train image root path here
+# Change your test image root path here
 test_img_path = "./val2014/"
 
-# Change your train annot json path here
+# Change your test annot json path here
 test_annot_path = "./annotations/captions_val2014.json"
 
 # Change your device ("cpu" or "cuda")
@@ -46,14 +46,14 @@ vae = OpenAIDiscreteVAE()
 
 dalle = DALLE(
     dim = 1024,
-    vae = vae,                  # automatically infer (1) image sequence length and (2) number of image tokens
-    num_text_tokens = 49408,    # vocab size for text
-    text_seq_len = 256,         # text sequence length
-    depth = 1,                  # should aim to be 64
-    heads = 16,                 # attention heads
-    dim_head = 64,              # attention head dimension
-    attn_dropout = 0.1,         # attention dropout
-    ff_dropout = 0.1            # feedforward dropout
+    vae = vae,                                 # automatically infer (1) image sequence length and (2) number of image tokens
+    num_text_tokens = tokenizer.vocab_size,    # vocab size for text
+    text_seq_len = 256,                        # text sequence length
+    depth = 1,                                 # should aim to be 64
+    heads = 16,                                # attention heads
+    dim_head = 64,                             # attention head dimension
+    attn_dropout = 0.1,                        # attention dropout
+    ff_dropout = 0.1                           # feedforward dropout
 ).to(device)
 
 dalle.load_state_dict(torch.load(dalle_load_path))
