@@ -16,8 +16,8 @@ from einops import rearrange
 # Change your input size here
 input_image_size = 256
 
-# Change your batch size here
-batch_size = 64
+# Change your training batch size here
+batch_size = 4
 
 # Change your epoch here
 epoch = 5
@@ -70,73 +70,78 @@ train_data = JSONDataset(
 
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-vae = DiscreteVAE(
-    image_size = 256,
-    num_layers = 3,
-    num_tokens = 8192,
-    codebook_dim = 1024,
-    hidden_dim = 64,
-    num_resnet_blocks = 1,
-    temperature = 0.9
-).to(device)
+# vae = DiscreteVAE(
+#     image_size = 256,
+#     num_layers = 3,
+#     num_tokens = 8192,
+#     codebook_dim = 1024,
+#     hidden_dim = 64,
+#     num_resnet_blocks = 1,
+#     temperature = 0.9
+# ).to(device)
 
-if os.path.exists(vae_save_path):
-    vae.load_state_dict(torch.load(vae_save_path))
+vae = OpenAIDiscreteVAE()
 
-vae_parallel = nn.DataParallel(vae, device_ids=device_ids, output_device=[1], dim=0)
+# if os.path.exists(vae_save_path):
+#     vae.load_state_dict(torch.load(vae_save_path))
+
+# vae_parallel = nn.DataParallel(vae, device_ids=device_ids, output_device=[1], dim=0)
 
 def get_trainable_params(model):
     return [params for params in model.parameters() if params.requires_grad]
 
-opt = Adam(
-    get_trainable_params(vae_parallel),
-    lr = 3e-4,
-    # weight_decay=0.01,
-    # betas = (0.9, 0.999)
-)
-sched = ReduceLROnPlateau(
-    opt,
-    mode="min",
-    factor=0.5,
-    patience=10,
-    cooldown=10,
-    min_lr=1e-6,
-    verbose=True,
-)
+# opt = Adam(
+#     get_trainable_params(vae_parallel),
+#     lr = 3e-4,
+#     # weight_decay=0.01,
+#     # betas = (0.9, 0.999)
+# )
+# sched = ReduceLROnPlateau(
+#     opt,
+#     mode="min",
+#     factor=0.5,
+#     patience=10,
+#     cooldown=10,
+#     min_lr=1e-6,
+#     verbose=True,
+# )
 
-for curr_epoch in range(epoch):
-    print("Run training vae ...")
-    print(f"Epoch {curr_epoch+1} / {epoch}")
+# for curr_epoch in range(epoch):
+#     print("Run training vae ...")
+#     print(f"Epoch {curr_epoch+1} / {epoch}")
 
-    batch_idx = 0
+#     batch_idx = 0
     
-    for train_features, _ in tqdm(iter(train_loader)):
-        loss = vae_parallel(train_features, return_loss=True)
+#     for train_features, _ in tqdm(iter(train_loader)):
+#         loss = vae_parallel(train_features, return_loss=True)
 
-        opt.zero_grad()
-        loss.mean().backward()
-        opt.step()
+#         opt.zero_grad()
+#         loss.mean().backward()
+#         opt.step()
         
-        if batch_idx % 100 == 0:
-            torch.save(vae.state_dict(), vae_save_path)
-            print(f"average loss: {loss.mean().data}")
+#         if batch_idx % 100 == 0:
+#             torch.save(vae.state_dict(), vae_save_path)
+#             print(f"average loss: {loss.mean().data}")
             
-        batch_idx += 1
+#         batch_idx += 1
         
-    sched.step(loss.mean())
+#     sched.step(loss.mean())
 
-torch.save(vae.state_dict(), vae_save_path)
+# torch.save(vae.state_dict(), vae_save_path)
 
 dalle = DALLE(
     dim = 1024,
     vae = vae,                                 # automatically infer (1) image sequence length and (2) number of image tokens
     num_text_tokens = tokenizer.vocab_size,    # vocab size for text
     text_seq_len = 256,                        # text sequence length
-    depth = 1,                                 # should aim to be 64
+    depth = 20,                                # should aim to be 64
     heads = 16,                                # attention heads
     dim_head = 64,                             # attention head dimension
     attn_dropout = 0.1,                        # attention dropout
-    ff_dropout = 0.1                           # feedforward dropout
+    ff_dropout = 0.1,                          # feedforward dropout
+    # reversible = True,
+    stable = True,
+    optimize_for_inference = True
 ).to(device)
 
 if os.path.exists(dalle_save_path):
@@ -174,11 +179,11 @@ for curr_epoch in range(epoch):
         opt.step()
         
         if batch_idx % 100 == 0:
-            torch.save(vae.state_dict(), dalle_save_path)
+            torch.save(dalle.state_dict(), dalle_save_path)
             print(f"average loss: {loss.mean().data}")
             
         batch_idx += 1
         
     sched.step(loss.mean())
 
-torch.save(vae.state_dict(), dalle_save_path)
+torch.save(dalle.state_dict(), dalle_save_path)
