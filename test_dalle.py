@@ -3,7 +3,7 @@ from torchvision import transforms as T
 from pathlib import Path
 import os
 from tqdm import tqdm
-from dalle_pytorch import OpenAIDiscreteVAE, DALLE
+from dalle_pytorch import OpenAIDiscreteVAE, DALLE, DiscreteVAE
 from dalle_pytorch.tokenizer import SimpleTokenizer
 from torchvision.datasets.coco import CocoCaptions
 
@@ -41,28 +41,44 @@ test_data = CocoCaptions(
     transform=transform
 )
 
+# vae = DiscreteVAE(
+#     channels = 3,
+#     image_size = 256,
+#     num_layers = 3,
+#     num_tokens = 8192,
+# ).to(device)
+
+vae = OpenAIDiscreteVAE().to(device)
+
+vae.eval()
+
 tokenizer = SimpleTokenizer()
-vae = OpenAIDiscreteVAE()
 
 dalle = DALLE(
     dim = 1024,
     vae = vae,                                 # automatically infer (1) image sequence length and (2) number of image tokens
     num_text_tokens = tokenizer.vocab_size,    # vocab size for text
     text_seq_len = 256,                        # text sequence length
-    depth = 1,                                 # should aim to be 64
+    depth = 22,                                # should aim to be 64
     heads = 16,                                # attention heads
     dim_head = 64,                             # attention head dimension
     attn_dropout = 0.1,                        # attention dropout
-    ff_dropout = 0.1                           # feedforward dropout
+    ff_dropout = 0.1,                          # feedforward dropout
+    # reversible = True,
+    stable = True,
+    optimize_for_inference = True
 ).to(device)
 
-dalle.load_state_dict(torch.load(dalle_load_path))
+if os.path.exists(dalle_load_path):
+    dalle.load_state_dict(torch.load(dalle_load_path))
+
+dalle.eval()
 
 for data in tqdm(test_data):
     _, target = data
 
-    text = tokenizer.tokenize(target).to(device)
-
+    text = tokenizer.tokenize(target[0]).to(device)
+    
     test_img_tensors = dalle.generate_images(text)
 
     for test_idx, test_img_tensor in enumerate(test_img_tensors):

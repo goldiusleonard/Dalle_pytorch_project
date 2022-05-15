@@ -20,7 +20,7 @@ input_image_size = 256
 batch_size = 4
 
 # Change your epoch here
-epoch = 5
+epoch = 29
 
 # Change your train image root path here
 train_img_path = "./train2014/"
@@ -80,7 +80,7 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 #     temperature = 0.9
 # ).to(device)
 
-vae = OpenAIDiscreteVAE()
+vae = OpenAIDiscreteVAE().to(device)
 
 # if os.path.exists(vae_save_path):
 #     vae.load_state_dict(torch.load(vae_save_path))
@@ -134,7 +134,7 @@ dalle = DALLE(
     vae = vae,                                 # automatically infer (1) image sequence length and (2) number of image tokens
     num_text_tokens = tokenizer.vocab_size,    # vocab size for text
     text_seq_len = 256,                        # text sequence length
-    depth = 20,                                # should aim to be 64
+    depth = 22,                                # should aim to be 64
     heads = 16,                                # attention heads
     dim_head = 64,                             # attention head dimension
     attn_dropout = 0.1,                        # attention dropout
@@ -172,6 +172,9 @@ for curr_epoch in range(epoch):
     batch_idx = 0
     
     for train_features, train_targets in tqdm(iter(train_loader)):
+        if len(train_features) % len(device_ids) != 0:
+            break
+
         loss = dalle_parallel(train_targets, train_features, return_loss=True)
 
         opt.zero_grad()
